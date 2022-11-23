@@ -5,7 +5,12 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "Mustafa3264\\Lrucache\\": "src/"
+            "Mustafa\\Lrucache\\": "src/"
+        }
+    },
+    "extra": {
+        "hyperf": {
+            "config": "Mustafa\\Lrucache\\ConfigProvider"
         }
     },
     "authors": [
