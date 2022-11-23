@@ -1,0 +1,19 @@
+{
+    "name": "mustafa3264/lrucache",
+    "description": "swoole table - redis use lru for hyperf cache",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mustafa3264\\Lrucache\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "mustafa",
+            "email": "hailiang_fang@163.com"
+        }
+    ],
+    "minimum-stability": "alpha",
+    "require": {}
+}
