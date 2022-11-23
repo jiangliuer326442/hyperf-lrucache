@@ -6,6 +6,7 @@ namespace Mustafa\Lrucache\Listeners;
 
 use Mustafa\Lrucache\Annotation\SwooleTable;
 use Mustafa\Lrucache\Annotation\SwooleTableItem;
+use Mustafa\Lrucache\Core\LRUCache;
 use Mustafa\Lrucache\LRUCacheManager;
 use Mustafa\Lrucache\SwooleTableManage;
 use Hyperf\Di\Annotation\AnnotationCollector;
@@ -43,7 +44,7 @@ class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
             $swooletable->create();
             SwooleTableManage::register($table_name, $swooletable);
 
-            $lrucache = make(\App\Model\Lrncache\Core\LRUCache::class, [$table_name, $swooletableobj->lruLimit]);
+            $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit]);
             LRUCacheManager::register($table_name, $lrucache);
         }
     }
