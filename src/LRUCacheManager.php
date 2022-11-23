@@ -1,6 +1,6 @@
 <?php
 
-namespace Mustafa\Lrucache\Lrncache;
+namespace Mustafa\Lrucache;
 
 class LRUCacheManager
 {
