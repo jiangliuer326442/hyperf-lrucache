@@ -19,12 +19,14 @@ class SwooleTableCacheAspect extends AbstractAspect
     {
         $annotation = AnnotationCollector::getClassMethodAnnotation($proceedingJoinPoint->className, $proceedingJoinPoint->methodName);
 
+        $table = make($annotation[SwooleTableCache::class]->entity)->getTable();
+
         $swooletableAnonotation = AnnotationCollector::getClassAnnotation($annotation[SwooleTableCache::class]->entity, SwooleTable::class);
 
-        $cache = LRUCacheManager::instance($swooletableAnonotation->table);
+        $cache = LRUCacheManager::instance($table);
 
         if ($annotation[SwooleTableCache::class]->action === 'get') {
-            $ret = $cache->get($swooletableAnonotation->table . ':', $proceedingJoinPoint->getArguments()[0]);
+            $ret = $cache->get($table . ':', $proceedingJoinPoint->getArguments()[0]);
 
             if ($ret) {
                 return $ret;
@@ -35,17 +37,18 @@ class SwooleTableCacheAspect extends AbstractAspect
 
         if (in_array($annotation[SwooleTableCache::class]->action, ['get', 'set'])) {
             if ($ret) {
+                $attributes = $ret->getAttributes();
                 $cache->put(
-                    $swooletableAnonotation->table . ':',
+                    $table . ':',
                     $proceedingJoinPoint->getArguments()[0],
-                    $ret,
+                    $attributes,
                     $annotation[SwooleTableCache::class]->expire
                 );
             }
         } elseif (in_array($annotation[SwooleTableCache::class]->action, ['del'])) {
             if ($ret) {
                 $cache->del(
-                    $swooletableAnonotation->table . ':',
+                    $table . ':',
                     $proceedingJoinPoint->getArguments()[0]
                 );
             }

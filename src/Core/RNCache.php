@@ -28,15 +28,9 @@ class RNCache implements RNCacheInterface
         $redis = $this->container->get(RedisFactory::class)->get($this->pool);
         $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd');
 
-        $lua = "
-                local key=KEYS[1];
-                local hash_key=KEYS[2];
-                local ret1 = redis.call('hget', 'hash:' .. key, hash_key);
-                local ret2 = redis.call('zscore', 'zset:' .. key, hash_key);
-                return {ret1, ret2};
-            ";
+        $seralized_val = $redis->hGet($_key . ":hash", substr($key, -$this->hash_key_length, $this->hash_key_length));
+        $expired_at = $redis->zScore($_key . ":hash", substr($key, -$this->hash_key_length, $this->hash_key_length));
 
-        [$seralized_val, $expired_at] = $redis->eval($lua, [$_key, substr($key, -$this->hash_key_length, $this->hash_key_length)], 2);
         if ($seralized_val && $expired_at) {
             $val = unserialize($seralized_val);
             return [$val, $expired_at];
@@ -52,22 +46,16 @@ class RNCache implements RNCacheInterface
         for ($i = $current; $i < $expireAt; $i = $i + 86400) {
             $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd', $i);
 
-            $lua = "
-                local key=KEYS[1];
-                local hash_key=KEYS[2];
-                local hash_val=KEYS[3];
-                local expire=KEYS[4];
-                redis.call('hset', 'hash:' .. key, hash_key, hash_val);
-                if redis.call('ttl','hash:' .. key)==-1 then
-                  redis.call('expire', 'hash:' .. key, 172800)
-                end
-                redis.call('zadd', 'zset:' .. key, expire, hash_key);
-                if redis.call('ttl','zset:' .. key)==-1 then
-                  redis.call('expire', 'zset:' .. key, 172800)
-                end
-            ";
-
-            $redis->eval($lua, [$_key, substr($key, -$this->hash_key_length, $this->hash_key_length), serialize($value), $expireAt], 4);
+            $redis->hSet($_key . ':hash', substr($key, -$this->hash_key_length, $this->hash_key_length), serialize($value));
+            $hash_ttl = $redis->ttl($_key . ':hash');
+            if ($hash_ttl == -1){
+                $redis->expire($_key . ':hash', 172800);
+            }
+            $redis->zAdd($_key . ':zset', $expireAt, substr($key, -$this->hash_key_length, $this->hash_key_length));
+            $zset_ttl = $redis->ttl($_key . ':zset');
+            if ($zset_ttl == -1){
+                $redis->expire($_key . ':zset', 172800);
+            }
         }
     }
 
@@ -81,14 +69,9 @@ class RNCache implements RNCacheInterface
             for ($i = $current; $i < $expireAt; $i = $i + 86400) {
                 $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd', $i);
 
-                $lua = "
-                    local key=KEYS[1];
-                    local hash_key=KEYS[2];
-                    redis.call('hdel', 'hash:' .. key, hash_key);
-                    redis.call('zrem', 'zset:' .. key, hash_key);
-                ";
+                $redis->hDel($_key . ':hash', substr($key, -$this->hash_key_length, $this->hash_key_length));
+                $redis->zRem($_key . ':zset', substr($key, -$this->hash_key_length, $this->hash_key_length));
 
-                $redis->eval($lua, [$_key, substr($key, -$this->hash_key_length, $this->hash_key_length)], 2);
             }
         }
     }
