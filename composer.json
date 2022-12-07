@@ -20,5 +20,7 @@
         }
     ],
     "minimum-stability": "alpha",
-    "require": {}
+    "require": {
+      "ext-swoole": "*"
+    }
 }
