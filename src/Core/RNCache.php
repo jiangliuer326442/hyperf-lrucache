@@ -29,7 +29,7 @@ class RNCache implements RNCacheInterface
         $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd');
 
         $seralized_val = $redis->hGet($_key . ":hash", substr($key, -$this->hash_key_length, $this->hash_key_length));
-        $expired_at = $redis->zScore($_key . ":hash", substr($key, -$this->hash_key_length, $this->hash_key_length));
+        $expired_at = $redis->zScore($_key . ":zset", substr($key, -$this->hash_key_length, $this->hash_key_length));
 
         if ($seralized_val && $expired_at) {
             $val = unserialize($seralized_val);
