@@ -20,7 +20,7 @@ class DeleteCacheListener implements ListenerInterface
         ];
     }
 
-    public function process(object $event)
+    public function process(object $event) : void
     {
         if ($event instanceof Event) {
             $model = $event->getModel();
