@@ -27,46 +27,33 @@ class SwooleTableCacheAspect extends AbstractAspect
     {
         $annotation = AnnotationCollector::getClassMethodAnnotation($proceedingJoinPoint->className, $proceedingJoinPoint->methodName);
 
-        $model = make($annotation[SwooleTableCache::class]->entity);
+        $model = make($proceedingJoinPoint->className);
         $table = $model->getTable();
-
-        $swooletableAnonotation = AnnotationCollector::getClassAnnotation($annotation[SwooleTableCache::class]->entity, SwooleTable::class);
 
         $cache = LRUCacheManager::instance($table);
 
-        if ($annotation[SwooleTableCache::class]->action === 'get') {
-            $data = $cache->get($table . ':', $proceedingJoinPoint->getArguments()[0]);
-            if ($data) {
-                $connection = $model->getConnectionName();
-                $defaultData = $this->collector->getDefaultValue(
-                    $connection,
-                    $table
-                );
-                $attributes = array_replace($defaultData, $data);
+        $data = $cache->get($table . ':', $proceedingJoinPoint->getArguments()[0]);
+        if ($data) {
+            $connection = $model->getConnectionName();
+            $defaultData = $this->collector->getDefaultValue(
+                $connection,
+                $table
+            );
+            $attributes = array_replace($defaultData, $data);
 
-                return $model->newFromBuilder($attributes);
-            }
+            return $model->newFromBuilder($attributes);
         }
 
         $ret = $proceedingJoinPoint->process();
 
-        if (in_array($annotation[SwooleTableCache::class]->action, ['get', 'set'])) {
-            if ($ret) {
-                $attributes = $ret->getAttributes();
-                $cache->put(
-                    $table . ':',
-                    $proceedingJoinPoint->getArguments()[0],
-                    $attributes,
-                    $annotation[SwooleTableCache::class]->expire
-                );
-            }
-        } elseif (in_array($annotation[SwooleTableCache::class]->action, ['del'])) {
-            if ($ret) {
-                $cache->del(
-                    $table . ':',
-                    $proceedingJoinPoint->getArguments()[0]
-                );
-            }
+        if ($ret) {
+            $attributes = $ret->getAttributes();
+            $cache->put(
+                $table . ':',
+                $proceedingJoinPoint->getArguments()[0],
+                $attributes,
+                $annotation[SwooleTableCache::class]->expire
+            );
         }
 
         return $ret;
