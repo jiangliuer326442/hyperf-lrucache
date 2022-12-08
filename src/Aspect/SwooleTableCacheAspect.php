@@ -11,15 +11,14 @@ use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Di\Annotation\Aspect;
 use Hyperf\Di\Aop\AbstractAspect;
 use Hyperf\Di\Aop\ProceedingJoinPoint;
+use PhpCsFixer\ConfigInterface;
 use Psr\Container\ContainerInterface;
 
 #[Aspect(annotations: [SwooleTableCache::class])]
 class SwooleTableCacheAspect extends AbstractAspect
 {
-    protected TableCollector $collector;
 
-    public function __construct(\Hyperf\Contract\ContainerInterface $container){
-        $this->collector = $container->get(TableCollector::class);
+    public function __construct(protected TableCollector $collector, protected \Hyperf\Contract\ConfigInterface $config){
     }
 
     public function process(ProceedingJoinPoint $proceedingJoinPoint)
@@ -28,6 +27,11 @@ class SwooleTableCacheAspect extends AbstractAspect
 
         $model = make($proceedingJoinPoint->className);
         $table = $model->getTable();
+
+        $expire = $this->config->get("lrncache.redis.expire");
+        if ($annotation[SwooleTableCache::class]->expire){
+            $expire = $annotation[SwooleTableCache::class]->expire;
+        }
 
         $cache = LRUCacheManager::instance($table);
 
@@ -51,7 +55,7 @@ class SwooleTableCacheAspect extends AbstractAspect
                 $table . ':',
                 $proceedingJoinPoint->getArguments()[0],
                 $attributes,
-                $annotation[SwooleTableCache::class]->expire
+                $expire
             );
         }
 

@@ -9,5 +9,5 @@ use Hyperf\Di\Annotation\AbstractAnnotation;
 class SwooleTableCache extends AbstractAnnotation
 {
 
-    public int $expire;
+    public int $expire = 0;
 }
