@@ -12,5 +12,5 @@ class SwooleTable extends AbstractAnnotation
 
     public int $lruLimit;
 
-    public int $hash_key_length;
+    public int $hashKeyLength;
 }
