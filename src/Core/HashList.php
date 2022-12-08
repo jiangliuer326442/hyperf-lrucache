@@ -10,9 +10,9 @@ use Hyperf\Di\Annotation\Inject;
 class HashList
 {
 
-    private ?Node $head;
+    private ?Node $head = null;
 
-    private ?Node $tail;
+    private ?Node $tail = null;
 
     private string $table;
 
