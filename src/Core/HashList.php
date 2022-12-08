@@ -54,7 +54,7 @@ class HashList
             if (!$ret) return [];
             [$val, $expireAt] = $ret;
             if ($expireAt > time()) {
-                $this->addAsHead($key, $val, $expireAt - time());
+                $this->addAsHead($key, $val, (int)($expireAt - time()));
                 return $val;
             }
             return [];
