@@ -16,8 +16,9 @@ class RNCache implements RNCacheInterface
 
     private int $hash_key_length;
 
-    public function __construct(protected ConfigInterface $config, protected ContainerInterface $container)
+    public function __construct(int $hash_key_length, protected ConfigInterface $config, protected ContainerInterface $container)
     {
+        $this->hash_key_length = $hash_key_length;
         $this->pool = $this->config->get('lrncache.redis.pool');
         $this->prefix = $this->config->get('lrncache.redis.prefix');
     }
@@ -75,13 +76,6 @@ class RNCache implements RNCacheInterface
                 $redis->zRem($_key . ':zset', substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
 
             }
-        }
-    }
-
-    public function setHashKeyLength(int $hash_key_length): void
-    {
-        if ($hash_key_length){
-            $this->hash_key_length = $hash_key_length;
         }
     }
 }

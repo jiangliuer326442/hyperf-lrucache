@@ -10,8 +10,6 @@ use Hyperf\Di\Annotation\Inject;
 class LRUCache
 {
 
-    private int $limit;
-
     private HashList $list;
 
     /**
@@ -19,13 +17,8 @@ class LRUCache
      * @param string $table
      * @param int $limit
      */
-    public function __construct(string $table, int $limit, int $hash_key_length, protected RNCacheInterface $RNCache, protected ConfigInterface $config)
+    public function __construct(string $table, protected int $limit, protected RNCacheInterface $RNCache, protected ConfigInterface $config)
     {
-        $this->limit = $limit;
-        if (!$hash_key_length) {
-            $hash_key_length = $this->config->get('lrncache.redis.hash_key_length');
-        }
-        $this->RNCache->setHashKeyLength($hash_key_length);
         $this->list = new HashList($table, $this->RNCache);
     }
 

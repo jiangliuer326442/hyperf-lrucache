@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Mustafa\Lrucache\Listeners;
 
+use Hyperf\Contract\ConfigInterface;
+use Hyperf\Di\Annotation\Inject;
 use Mustafa\Lrucache\Annotation\SwooleTable;
 use Mustafa\Lrucache\Annotation\SwooleTableItem;
 use Mustafa\Lrucache\Core\LRUCache;
+use Mustafa\Lrucache\Core\RNCacheInterface;
 use Mustafa\Lrucache\LRUCacheManager;
 use Mustafa\Lrucache\SwooleTableManage;
 use Hyperf\Di\Annotation\AnnotationCollector;
@@ -14,6 +17,10 @@ use Hyperf\Framework\Event\BeforeMainServerStart;
 
 class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
 {
+
+    #[Inject]
+    private ConfigInterface $config;
+
     /**
      * {@inheritDoc}
      */
@@ -45,7 +52,12 @@ class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
             $swooletable->create();
             SwooleTableManage::register($table_name, $swooletable);
 
-            $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit, $swooletableobj->hashKeyLength]);
+            $hash_key_length = $swooletableobj->hashKeyLength;
+            if (!$hash_key_length) {
+                $hash_key_length = $this->config->get('lrncache.redis.hash_key_length');
+            }
+            $RNCache = make(RNCacheInterface::class, [$hash_key_length]);
+            $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit, $RNCache]);
             LRUCacheManager::register($table_name, $lrucache);
         }
     }
