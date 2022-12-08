@@ -9,8 +9,6 @@ use Hyperf\Di\Annotation\Inject;
 
 class HashList
 {
-    #[Inject]
-    private RNCacheInterface $RNCache;
 
     private ?Node $head;
 
@@ -18,10 +16,8 @@ class HashList
 
     private string $table;
 
-    public function __construct(string $table, Node $head = null, Node $tail = null)
+    public function __construct(string $table, protected RNCacheInterface $RNCache)
     {
-        $this->head = $head;
-        $this->tail = $tail;
         $this->table = $table;
     }
 
@@ -42,19 +38,21 @@ class HashList
 
     /**
      * @param $key
+     * @param $index
      * @return array
      *               获取key的值
      */
-    public function get($key): array
+    public function get($key, $index): array
     {
-        $res = SwooleTableManage::instance($this->table)->get($key);
+        $raw_key = $key . $index;
+        $res = SwooleTableManage::instance($this->table)->get($raw_key);
 
         if ($res === false) {
-            $ret = $this->RNCache->get($key);
+            $ret = $this->RNCache->get($key, $index);
             if (!$ret) return [];
             [$val, $expireAt] = $ret;
             if ($expireAt > time()) {
-                $this->addAsHead($key, $val, (int)($expireAt - time()));
+                $this->addAsHead($key . $index, $val, (int)($expireAt - time()));
                 return $val;
             }
             return [];
@@ -64,7 +62,7 @@ class HashList
         unset($res['_pre'], $res['_next']);
 
         $node = new Node($res);
-        $node->setKey($key);
+        $node->setKey($raw_key);
         $node->setPre($_pre);
         $node->setNext($_next);
         $node->setExpireAt($res['_expire']);
@@ -111,17 +109,14 @@ class HashList
      * @param $key
      * 移除指针(删除最近最少使用原则)
      */
-    public function removeNode($key)
+    public function removeNode($key, $index)
     {
+        $raw_key = $key . $index;
         $currentTimestamp = time();
         $current = $this->head;
         for ($i = 1; $i < $this->getSize(); ++$i) {
-            if ($current->getKey() == $key) {
-                $this->RNCache->del($current->getKey());
-                break;
-            }
-            if ($current->getExpireAt() < $currentTimestamp) {
-                $this->RNCache->del($current->getKey());
+            if ($current->getKey() == $raw_key) {
+                $this->RNCache->del($key, $index);
                 break;
             }
 

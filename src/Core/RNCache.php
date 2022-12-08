@@ -19,17 +19,17 @@ class RNCache implements RNCacheInterface
     public function __construct(protected ConfigInterface $config, protected ContainerInterface $container)
     {
         $this->pool = $this->config->get('lrncache.redis.pool');
-        $this->hash_key_length = $this->config->get('lrncache.redis.hash_key_length');
         $this->prefix = $this->config->get('lrncache.redis.prefix');
     }
 
-    public function get(string $key): array
+    public function get(string $key, string $index): array
     {
+        $raw_key = $key . $index;
         $redis = $this->container->get(RedisFactory::class)->get($this->pool);
-        $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd');
+        $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd');
 
-        $seralized_val = $redis->hGet($_key . ":hash", substr($key, -$this->hash_key_length, $this->hash_key_length));
-        $expired_at = $redis->zScore($_key . ":zset", substr($key, -$this->hash_key_length, $this->hash_key_length));
+        $seralized_val = $redis->hGet($_key . ":hash", substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
+        $expired_at = $redis->zScore($_key . ":zset", substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
 
         if ($seralized_val && $expired_at) {
             $val = unserialize($seralized_val);
@@ -38,20 +38,21 @@ class RNCache implements RNCacheInterface
         return [];
     }
 
-    public function set(string $key, array $value, int $expire): void
+    public function set(string $key, string $index, array $value, int $expire): void
     {
+        $raw_key = $key . $index;
         $current = time();
         $expireAt = $current + $expire;
         $redis = $this->container->get(RedisFactory::class)->get($this->pool);
         for ($i = $current; $i < $expireAt; $i = $i + 86400) {
-            $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd', $i);
+            $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd', $i);
 
-            $redis->hSet($_key . ':hash', substr($key, -$this->hash_key_length, $this->hash_key_length), serialize($value));
+            $redis->hSet($_key . ':hash', substr($raw_key, -$this->hash_key_length, $this->hash_key_length), serialize($value));
             $hash_ttl = $redis->ttl($_key . ':hash');
             if ($hash_ttl == -1){
                 $redis->expire($_key . ':hash', 172800);
             }
-            $redis->zAdd($_key . ':zset', $expireAt, substr($key, -$this->hash_key_length, $this->hash_key_length));
+            $redis->zAdd($_key . ':zset', $expireAt, substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
             $zset_ttl = $redis->ttl($_key . ':zset');
             if ($zset_ttl == -1){
                 $redis->expire($_key . ':zset', 172800);
@@ -59,20 +60,28 @@ class RNCache implements RNCacheInterface
         }
     }
 
-    public function del(string $key): void
+    public function del(string $key, string $index): void
     {
-        $ret = $this->get($key);
+        $raw_key = $key . $index;
+        $ret = $this->get($key, $index);
         if ($ret) {
             [$val, $expireAt] = $ret;
             $redis = $this->container->get(RedisFactory::class)->get($this->pool);
             $current = time();
             for ($i = $current; $i < $expireAt; $i = $i + 86400) {
-                $_key = $this->prefix . substr($key, 0, strlen($key) - $this->hash_key_length) . ':' . date('Ymd', $i);
+                $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd', $i);
 
-                $redis->hDel($_key . ':hash', substr($key, -$this->hash_key_length, $this->hash_key_length));
-                $redis->zRem($_key . ':zset', substr($key, -$this->hash_key_length, $this->hash_key_length));
+                $redis->hDel($_key . ':hash', substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
+                $redis->zRem($_key . ':zset', substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
 
             }
+        }
+    }
+
+    public function setHashKeyLength(int $hash_key_length): void
+    {
+        if ($hash_key_length){
+            $this->hash_key_length = $hash_key_length;
         }
     }
 }

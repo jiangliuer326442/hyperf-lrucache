@@ -45,7 +45,7 @@ class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
             $swooletable->create();
             SwooleTableManage::register($table_name, $swooletable);
 
-            $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit]);
+            $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit, $swooletableobj->hash_key_length]);
             LRUCacheManager::register($table_name, $lrucache);
         }
     }

@@ -13,7 +13,7 @@ interface RNCacheInterface
      *               ret 缓存的数据
      *               ex 数据过期时间
      */
-    public function get(string $key): array;
+    public function get(string $key, string $index): array;
 
     /**
      * 保存key.
@@ -21,11 +21,13 @@ interface RNCacheInterface
      * @param array $value
      * @param int $expire
      */
-    public function set(string $key, array $value, int $expire): void;
+    public function set(string $key, string $index, array $value, int $expire): void;
 
     /**
      * 删除key.
      * @param string $key
      */
-    public function del(string $key): void;
+    public function del(string $key, string $index): void;
+
+    public function setHashKeyLength(int $hash_key_length): void;
 }

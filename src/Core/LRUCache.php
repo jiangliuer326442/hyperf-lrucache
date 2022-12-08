@@ -9,11 +9,6 @@ use Hyperf\Di\Annotation\Inject;
 
 class LRUCache
 {
-    #[Inject]
-    private ConfigInterface $config;
-
-    #[Inject]
-    private RNCacheInterface $RNCache;
 
     private int $limit;
 
@@ -24,10 +19,14 @@ class LRUCache
      * @param string $table
      * @param int $limit
      */
-    public function __construct(string $table, int $limit)
+    public function __construct(string $table, int $limit, int $hash_key_length, protected RNCacheInterface $RNCache, protected ConfigInterface $config)
     {
         $this->limit = $limit;
-        $this->list = new HashList($table);
+        if (!$hash_key_length) {
+            $hash_key_length = $this->config->get('lrncache.redis.hash_key_length');
+        }
+        $this->RNCache->setHashKeyLength($hash_key_length);
+        $this->list = new HashList($table, $this->RNCache);
     }
 
     /**
@@ -40,7 +39,7 @@ class LRUCache
             return [];
         }
         $index = str_pad((string)$index, 3, '0', STR_PAD_LEFT);
-        return $this->list->get($key . $index);
+        return $this->list->get($key, $index);
     }
 
     /**
@@ -56,11 +55,11 @@ class LRUCache
         $size = $this->list->getSize();
         $isHas = $this->list->checkIndex($key . $index);
         if ($isHas || $size + 1 > $this->limit) {
-            $this->list->removeNode($key . $index);
+            $this->list->removeNode($key, $index);
         }
         $this->list->addAsHead($key . $index, $value, $expire);
 
-        $this->RNCache->set($key . $index, $value, $expire);
+        $this->RNCache->set($key, $index, $value, $expire);
     }
 
     public function del(string $key, int $index): void
@@ -69,9 +68,9 @@ class LRUCache
         $index = str_pad((string)$index, $hash_key_length, '0', STR_PAD_LEFT);
         $isHas = $this->list->checkIndex($key . $index);
         if ($isHas) {
-            $this->list->removeNode($key . $index);
+            $this->list->removeNode($key, $index);
         }
 
-        $this->RNCache->del($key . $index);
+        $this->RNCache->del($key, $index);
     }
 }
