@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Mustafa\Lrucache\Aspect;
 
 use Hyperf\DbConnection\Collector\TableCollector;
-use Mustafa\Lrucache\Annotation\SwooleTable;
 use Mustafa\Lrucache\Annotation\SwooleTableCache;
 use Mustafa\Lrucache\LRUCacheManager;
 use Hyperf\Di\Annotation\AnnotationCollector;
