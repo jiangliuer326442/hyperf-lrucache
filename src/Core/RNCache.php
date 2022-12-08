@@ -45,7 +45,7 @@ class RNCache implements RNCacheInterface
         $current = time();
         $expireAt = $current + $expire;
         $redis = $this->container->get(RedisFactory::class)->get($this->pool);
-        for ($i = $current; $i < $expireAt; $i = $i + 86400) {
+        for ($i = $current; $i < $expireAt + 86400; $i = $i + 86400) {
             $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd', $i);
 
             $redis->hSet($_key . ':hash', substr($raw_key, -$this->hash_key_length, $this->hash_key_length), serialize($value));
@@ -69,7 +69,7 @@ class RNCache implements RNCacheInterface
             [$val, $expireAt] = $ret;
             $redis = $this->container->get(RedisFactory::class)->get($this->pool);
             $current = time();
-            for ($i = $current; $i < $expireAt; $i = $i + 86400) {
+            for ($i = $current; $i < $expireAt + 86400; $i = $i + 86400) {
                 $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd', $i);
 
                 $redis->hDel($_key . ':hash', substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
