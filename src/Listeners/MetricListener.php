@@ -22,6 +22,18 @@ class MetricListener implements ListenerInterface
 
     public function process(object $event): void
     {
+        $swooletable_length_gauge = $event
+            ->factory
+            ->makeGauge('swoole_table_length', ['table']);
+        $swooletable_lru_length_gauge = $event
+            ->factory
+            ->makeGauge('swoole_table_lru_length', ['table']);
+        $swooletable_max_length_gauge = $event
+            ->factory
+            ->makeGauge('swoole_table_max_length', ['table']);
+        $swooletable_size_gauge = $event
+            ->factory
+            ->makeGauge('swoole_table_size', ['table']);
         $tables = $this->getAnnotationTables();
         while (true) {
             foreach ($tables as $table_class => $swooletableobj) {
@@ -32,19 +44,10 @@ class MetricListener implements ListenerInterface
                 $max_record_num = $swooletableobj->lruLimit;
                 $record_max_num = $table->size;
                 $memory_size = $table->memorySize;
-                $stats = $table->stats();
-                echo $table_name;
-                echo PHP_EOL;
-                echo $record_num;
-                echo PHP_EOL;
-                echo $max_record_num;
-                echo PHP_EOL;
-                echo $record_max_num;
-                echo PHP_EOL;
-                echo $memory_size;
-                echo PHP_EOL;
-                print_r($stats);
-                echo "==================" . PHP_EOL;
+                $swooletable_length_gauge->with($table_name)->set($record_num);
+                $swooletable_lru_length_gauge->with($table_name)->set($max_record_num);
+                $swooletable_max_length_gauge->with($table_name)->set($record_max_num);
+                $swooletable_size_gauge->with($table_name)->set($memory_size);
             }
             sleep(10);
         }
