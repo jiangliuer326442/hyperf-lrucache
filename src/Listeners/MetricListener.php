@@ -20,7 +20,7 @@ class MetricListener implements ListenerInterface
         ];
     }
 
-    public function process(object $event)
+    public function process(object $event): void
     {
         $tables = $this->getAnnotationTables();
         while (true) {
