@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Mustafa\Lrucache\Listeners;
 
+use Hyperf\Contract\ConfigInterface;
+use Psr\Container\ContainerInterface;
 use Hyperf\Database\Model\Events\deleting;
 use Hyperf\Database\Model\Events\Event;
+use Hyperf\Redis\RedisFactory;
 use Hyperf\Database\Model\Events\updating;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Event\Annotation\Listener;
@@ -16,6 +19,15 @@ use Mustafa\Lrucache\LRUCacheManager;
 
 class DeleteCacheListener implements ListenerInterface
 {
+    private string $pool;
+
+    private string $prefix;
+
+    public function __construct(protected ConfigInterface $config, protected ContainerInterface $container){
+        $this->pool = $this->config->get('lrncache.redis.pool');
+        $this->prefix = $this->config->get('lrncache.redis.prefix');
+    }
+
     public function listen(): array
     {
         return [
@@ -34,6 +46,11 @@ class DeleteCacheListener implements ListenerInterface
                 $primaryKey = $model->getKeyName();
                 $cache = LRUCacheManager::instance($table);
                 $cache->del($table . ':', (string)$model->$primaryKey);
+                $redis = $this->container->get(RedisFactory::class)->get($this->pool);
+                $redis->publish($this->prefix . 'channel:swooletable:update', serialize([
+                    "table" => $table,
+                    "key" => (string)$model->$primaryKey,
+                ]));
             }
         }
     }
