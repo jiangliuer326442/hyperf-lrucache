@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace Mustafa\Lrucache\Listeners;
 
 use Hyperf\Contract\ConfigInterface;
-use Psr\Container\ContainerInterface;
 use Hyperf\Di\Annotation\Inject;
-use Hyperf\Redis\RedisFactory;
 use Mustafa\Lrucache\Annotation\SwooleTable;
 use Mustafa\Lrucache\Core\LRUCache;
 use Mustafa\Lrucache\Core\RNCacheInterface;
@@ -19,14 +17,8 @@ use Hyperf\Framework\Event\BeforeMainServerStart;
 class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
 {
 
-    private string $pool;
-
-    private string $prefix;
-
-    public function __construct(protected ConfigInterface $config, protected ContainerInterface $container){
-        $this->pool = $this->config->get('lrncache.redis.pool');
-        $this->prefix = $this->config->get('lrncache.redis.prefix');
-    }
+    #[Inject]
+    private ConfigInterface $config;
 
     /**
      * {@inheritDoc}
@@ -67,20 +59,6 @@ class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
             $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit, $RNCache]);
             LRUCacheManager::register($table_name, $lrucache);
         }
-
-        $redis = $this->container->get(RedisFactory::class)->get($this->pool);
-        co(function () use ($redis){
-            begin:
-            try {
-                $redis->subscribe([$this->prefix . 'channel:swooletable:update'], function ($redis, $chan, $msg) {
-                    echo 'channel:'.$chan.',message:'.$msg."\n";
-                });
-            }catch (\Exception $e){
-                echo $e->getMessage();
-                $redis = $this->container->get(RedisFactory::class)->get($this->pool);
-                goto begin;
-            }
-        });
     }
 
     private function getAnnotationTables(): array
