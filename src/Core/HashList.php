@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace Mustafa\Lrucache\Core;
 
 use Mustafa\Lrucache\SwooleTableManage;
-use Hyperf\Di\Annotation\Inject;
+use \Hyperf\Metric\Contract\MetricFactoryInterface;
+use \Hyperf\Metric\Contract\CounterInterface;
 
 class HashList
 {
@@ -16,9 +17,15 @@ class HashList
 
     private string $table;
 
-    public function __construct(string $table, protected RNCacheInterface $RNCache)
+    private CounterInterface $lru_hit_counter;
+
+    private CounterInterface $redis_hit_counter;
+
+    public function __construct(string $table, protected RNCacheInterface $RNCache, protected MetricFactoryInterface $metricFactory)
     {
         $this->table = $table;
+        $this->lru_hit_counter = $this->metricFactory->makeCounter('swoole_table_hit_lru', ['table'])->with($table);
+        $this->redis_hit_counter = $this->metricFactory->makeCounter('swoole_table_hit_redis', ['table'])->with($table);
     }
 
     public function getSize(): int
@@ -53,6 +60,7 @@ class HashList
             [$val, $expireAt] = $ret;
             if ($expireAt > time()) {
                 $this->addAsHead($key . $index, $val, (int)($expireAt - time()));
+                $this->redis_hit_counter->add(1);
                 return $val;
             }
             return [];
@@ -73,6 +81,7 @@ class HashList
                 $ret[$_key] = $_val;
             }
         }
+        $this->lru_hit_counter->add(1);
         return $ret;
     }
 

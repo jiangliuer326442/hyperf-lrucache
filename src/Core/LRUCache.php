@@ -19,7 +19,7 @@ class LRUCache
      */
     public function __construct(string $table, protected int $limit, protected RNCacheInterface $RNCache, protected ConfigInterface $config)
     {
-        $this->list = new HashList($table, $this->RNCache);
+        $this->list = make(HashList::class, [$table, $this->RNCache]);
     }
 
     /**
