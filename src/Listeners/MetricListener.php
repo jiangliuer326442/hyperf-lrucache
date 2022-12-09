@@ -27,10 +27,16 @@ class MetricListener implements ListenerInterface
             foreach ($tables as $table_class => $swooletableobj) {
                 $instance = make($table_class);
                 $table_name = $instance->getTable();
-                if (count(SwooleTableManage::instance($table_name))) {
-                    echo $table_name;
-                    echo count(SwooleTableManage::instance($table_name));
-                }
+                $table = SwooleTableManage::instance($table_name);
+                $record_num = count($table);
+                $record_size = $table->size;
+                echo $table_name
+                echo PHP_EOL;
+                echo $record_num;
+                echo PHP_EOL;
+                echo $record_size;
+                echo PHP_EOL;
+                echo "==================" . PHP_EOL;
             }
             sleep(10);
         }
