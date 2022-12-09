@@ -7,7 +7,6 @@ namespace Mustafa\Lrucache\Listeners;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\Inject;
 use Mustafa\Lrucache\Annotation\SwooleTable;
-use Mustafa\Lrucache\Annotation\SwooleTableItem;
 use Mustafa\Lrucache\Core\LRUCache;
 use Mustafa\Lrucache\Core\RNCacheInterface;
 use Mustafa\Lrucache\LRUCacheManager;

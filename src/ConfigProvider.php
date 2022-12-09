@@ -17,6 +17,7 @@ class ConfigProvider
             'listeners' => [
                 Lrucache\Listeners\BootProcessListener::class,
                 Lrucache\Listeners\DeleteCacheListener::class,
+                Lrucache\Listeners\MetricListener::class
             ],
             'annotations' => [
                 'scan' => [
