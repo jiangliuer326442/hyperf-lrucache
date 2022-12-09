@@ -17,15 +17,9 @@ class HashList
 
     private string $table;
 
-    private CounterInterface $lru_hit_counter;
-
-    private CounterInterface $redis_hit_counter;
-
-    public function __construct(string $table, protected RNCacheInterface $RNCache, protected MetricFactoryInterface $metricFactory)
+    public function __construct(string $table, protected RNCacheInterface $RNCache)
     {
         $this->table = $table;
-        $this->lru_hit_counter = $this->metricFactory->makeCounter('swoole_table_hit_lru', ['table'])->with($table);
-        $this->redis_hit_counter = $this->metricFactory->makeCounter('swoole_table_hit_redis', ['table'])->with($table);
     }
 
     public function getSize(): int
@@ -53,16 +47,18 @@ class HashList
     {
         $raw_key = $key . $index;
         $res = SwooleTableManage::instance($this->table)->get($raw_key);
-
         if ($res === false) {
             $ret = $this->RNCache->get($key, $index);
             if (!$ret) return [];
             [$val, $expireAt] = $ret;
             if ($expireAt > time()) {
                 $this->addAsHead($key . $index, $val, (int)($expireAt - time()));
-                $this->redis_hit_counter->add(1);
+                make(MetricFactoryInterface::class)->makeCounter('swoole_table_hit_redis', ['table'])->with($this->table)->add(1);
                 return $val;
             }
+            return [];
+        }
+        if ($res['_expire'] < time()){
             return [];
         }
         $_pre = $res['_pre'];
@@ -81,7 +77,7 @@ class HashList
                 $ret[$_key] = $_val;
             }
         }
-        $this->lru_hit_counter->add(1);
+        make(MetricFactoryInterface::class)->makeCounter('swoole_table_hit_lru', ['table'])->with($this->table)->add(1);
         return $ret;
     }
 

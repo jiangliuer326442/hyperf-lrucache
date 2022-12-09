@@ -13,6 +13,7 @@ use Hyperf\Di\Aop\AbstractAspect;
 use Hyperf\Di\Aop\ProceedingJoinPoint;
 use PhpCsFixer\ConfigInterface;
 use Psr\Container\ContainerInterface;
+use Hyperf\Metric\Contract\MetricFactoryInterface;
 
 #[Aspect(annotations: [SwooleTableCache::class])]
 class SwooleTableCacheAspect extends AbstractAspect
@@ -48,6 +49,8 @@ class SwooleTableCacheAspect extends AbstractAspect
         }
 
         $ret = $proceedingJoinPoint->process();
+
+        make(MetricFactoryInterface::class)->makeCounter('swoole_table_hit_db', ['table'])->with($table)->add(1);
 
         if ($ret) {
             $attributes = $ret->getAttributes();
