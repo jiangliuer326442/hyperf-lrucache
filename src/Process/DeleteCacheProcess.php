@@ -5,6 +5,7 @@ namespace Mustafa\Lrucache\Process;
 
 use Hyperf\Process\AbstractProcess;
 use Hyperf\Redis\RedisFactory;
+use Mustafa\Lrucache\LRUCacheManager;
 use Psr\Container\ContainerInterface;
 use Hyperf\Contract\ConfigInterface;
 
@@ -30,10 +31,13 @@ class DeleteCacheProcess extends AbstractProcess
             begin:
             try {
                 $redis->subscribe([$this->prefix . 'channel:swooletable:update'], function ($redis, $chan, $msg) {
-                    echo 'channel:'.$chan.',message:'.$msg."\n";
+                    $delete_cache_unserialize_data = unserialize($msg);
+                    $table = $delete_cache_unserialize_data['table'];
+                    $key = $delete_cache_unserialize_data['key'];
+                    $cache = LRUCacheManager::instance($table);
+                    $cache->del($table . ':', (string)$key);
                 });
             }catch (\Exception $e){
-                echo $e->getMessage();
                 $redis = $this->container->get(RedisFactory::class)->get($this->pool);
                 goto begin;
             }
