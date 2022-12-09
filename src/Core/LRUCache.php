@@ -33,7 +33,9 @@ class LRUCache
             return [];
         }
         $hash_key_length = $this->RNCache->getHashKeyLength();
-        $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
+        if ($hash_key_length > 0) {
+            $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
+        }
         return $this->list->get($key, $index);
     }
 
@@ -46,7 +48,9 @@ class LRUCache
     public function put(string $key, string $index, array $value, int $expire = -1): void
     {
         $hash_key_length = $this->RNCache->getHashKeyLength();
-        $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
+        if ($hash_key_length > 0) {
+            $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
+        }
         $size = $this->list->getSize();
         $isHas = $this->list->checkIndex($key . $index);
         if ($isHas || $size + 1 > $this->limit) {
@@ -60,7 +64,9 @@ class LRUCache
     public function del(string $key, string $index): void
     {
         $hash_key_length = $this->RNCache->getHashKeyLength();
-        $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
+        if ($hash_key_length > 0) {
+            $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
+        }
         $isHas = $this->list->checkIndex($key . $index);
         if ($isHas) {
             $this->list->removeNode($key, $index);

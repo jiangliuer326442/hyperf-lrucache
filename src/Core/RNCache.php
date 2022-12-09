@@ -25,12 +25,11 @@ class RNCache implements RNCacheInterface
 
     public function get(string $key, string $index): array
     {
-        $raw_key = $key . $index;
         $redis = $this->container->get(RedisFactory::class)->get($this->pool);
-        $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd');
+        list($_key, $_hash) = $this->explodeHash($key, $index, date('Ymd'));
 
-        $seralized_val = $redis->hGet($_key . ":hash", substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
-        $expired_at = $redis->zScore($_key . ":zset", substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
+        $seralized_val = $redis->hGet($_key . ":hash", $_hash);
+        $expired_at = $redis->zScore($_key . ":zset", $_hash);
 
         if ($seralized_val && $expired_at) {
             $val = unserialize($seralized_val);
@@ -46,14 +45,14 @@ class RNCache implements RNCacheInterface
         $expireAt = $current + $expire;
         $redis = $this->container->get(RedisFactory::class)->get($this->pool);
         for ($i = $current; $i < $expireAt + 86400; $i = $i + 86400) {
-            $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd', $i);
+            list($_key, $_hash) = $this->explodeHash($key, $index, date('Ymd', $i));
 
-            $redis->hSet($_key . ':hash', substr($raw_key, -$this->hash_key_length, $this->hash_key_length), serialize($value));
+            $redis->hSet($_key . ':hash', $_hash, serialize($value));
             $hash_ttl = $redis->ttl($_key . ':hash');
             if ($hash_ttl == -1){
                 $redis->expire($_key . ':hash', 172800);
             }
-            $redis->zAdd($_key . ':zset', $expireAt, substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
+            $redis->zAdd($_key . ':zset', $expireAt, $_hash);
             $zset_ttl = $redis->ttl($_key . ':zset');
             if ($zset_ttl == -1){
                 $redis->expire($_key . ':zset', 172800);
@@ -70,10 +69,10 @@ class RNCache implements RNCacheInterface
             $redis = $this->container->get(RedisFactory::class)->get($this->pool);
             $current = time();
             for ($i = $current; $i < $expireAt + 86400; $i = $i + 86400) {
-                $_key = $this->prefix . substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length) . ':' . date('Ymd', $i);
+                list($_key, $_hash) = $this->explodeHash($key, $index, date('Ymd', $i));
 
-                $redis->hDel($_key . ':hash', substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
-                $redis->zRem($_key . ':zset', substr($raw_key, -$this->hash_key_length, $this->hash_key_length));
+                $redis->hDel($_key . ':hash', $_hash);
+                $redis->zRem($_key . ':zset', $_hash);
 
             }
         }
@@ -82,5 +81,22 @@ class RNCache implements RNCacheInterface
     public function getHashKeyLength(): int
     {
         return $this->hash_key_length;
+    }
+
+    public function explodeHash(string $key, string $index, string $ymd): array
+    {
+        if ($this->hash_key_length > 0) {
+            $raw_key = $key.$index;
+            $key_prefix = substr($raw_key, 0, strlen($raw_key) - $this->hash_key_length);
+            if ($key_prefix){
+                $key_prefix .= ':';
+            }
+            $_key = $this->prefix . $key_prefix . $ymd;
+            $_hash = substr($raw_key, -$this->hash_key_length, $this->hash_key_length);
+        }else{
+            $_key = $this->prefix . $key . ':' . $ymd;
+            $_hash = $index;
+        }
+        return [$_key, $_hash];
     }
 }

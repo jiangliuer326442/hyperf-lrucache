@@ -29,5 +29,11 @@ interface RNCacheInterface
      */
     public function del(string $key, string $index): void;
 
+    /**
+     * 获取切割hash的key长度
+     * @return int
+     */
     public function getHashKeyLength() : int;
+
+    public function explodeHash(string $key, string $index, string $ymd) : array;
 }
