@@ -35,7 +35,7 @@ class SwooleTableCacheAspect extends AbstractAspect
 
         $cache = LRUCacheManager::instance($table);
 
-        $data = $cache->get($table . ':', $proceedingJoinPoint->getArguments()[0]);
+        $data = $cache->get($table . ':', (string)$proceedingJoinPoint->getArguments()[0]);
         if ($data) {
             $connection = $model->getConnectionName();
             $defaultData = $this->collector->getDefaultValue(
@@ -53,7 +53,7 @@ class SwooleTableCacheAspect extends AbstractAspect
             $attributes = $ret->getAttributes();
             $cache->put(
                 $table . ':',
-                $proceedingJoinPoint->getArguments()[0],
+                (string)$proceedingJoinPoint->getArguments()[0],
                 $attributes,
                 $expire
             );

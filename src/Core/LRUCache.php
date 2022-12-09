@@ -57,10 +57,10 @@ class LRUCache
         $this->RNCache->set($key, $index, $value, $expire);
     }
 
-    public function del(string $key, int $index): void
+    public function del(string $key, string $index): void
     {
-        $hash_key_length = $this->config->get('lrncache.redis.hash_key_length');
-        $index = str_pad((string)$index, $hash_key_length, '0', STR_PAD_LEFT);
+        $hash_key_length = $this->RNCache->getHashKeyLength();
+        $index = str_pad($index, $hash_key_length, '0', STR_PAD_LEFT);
         $isHas = $this->list->checkIndex($key . $index);
         if ($isHas) {
             $this->list->removeNode($key, $index);

@@ -33,7 +33,7 @@ class DeleteCacheListener implements ListenerInterface
                 $table = $model->getTable();
                 $primaryKey = $model->getKeyName();
                 $cache = LRUCacheManager::instance($table);
-                $cache->del($table . ':', $model->$primaryKey);
+                $cache->del($table . ':', (string)$model->$primaryKey);
             }
         }
     }
