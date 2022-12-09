@@ -15,7 +15,7 @@ class ConfigProvider
                 Lrucache\Core\RNCacheInterface::class => Lrucache\Core\RNCache::class,
             ],
             'processes' => [
-                Mustafa\Lrucache\Process\DeleteCacheProcess::class,
+                Lrucache\Process\DeleteCacheProcess::class,
             ],
             'listeners' => [
                 Lrucache\Listeners\BootProcessListener::class,
