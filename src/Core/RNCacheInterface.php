@@ -29,4 +29,5 @@ interface RNCacheInterface
      */
     public function del(string $key, string $index): void;
 
+    public function getHashKeyLength() : int;
 }

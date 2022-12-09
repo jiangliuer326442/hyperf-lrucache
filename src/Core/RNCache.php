@@ -78,4 +78,9 @@ class RNCache implements RNCacheInterface
             }
         }
     }
+
+    public function getHashKeyLength(): int
+    {
+        return $this->hash_key_length;
+    }
 }

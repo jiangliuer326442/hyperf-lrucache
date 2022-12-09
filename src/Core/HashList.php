@@ -106,10 +106,11 @@ class HashList
     }
 
     /**
-     * @param $key
+     * @param string $key
+     * @param string $index
      * 移除指针(删除最近最少使用原则)
      */
-    public function removeNode($key, $index)
+    public function removeNode(string $key, string $index) : void
     {
         $raw_key = $key . $index;
         $currentTimestamp = time();
