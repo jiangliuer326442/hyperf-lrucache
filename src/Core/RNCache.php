@@ -94,7 +94,7 @@ class RNCache implements RNCacheInterface
             $_key = $this->prefix . $key_prefix . $ymd;
             $_hash = substr($raw_key, -$this->hash_key_length, $this->hash_key_length);
         }else{
-            $_key = $this->prefix . $key . ':' . $ymd;
+            $_key = $this->prefix . $key . $ymd;
             $_hash = $index;
         }
         return [$_key, $_hash];
