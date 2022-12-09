@@ -28,10 +28,11 @@ class MetricListener implements ListenerInterface
                 $instance = make($table_class);
                 $table_name = $instance->getTable();
                 $table = SwooleTableManage::instance($table_name);
-                $record_num = count($table);
+                $record_num = $table->count();
                 $max_record_num = $swooletableobj->lruLimit;
                 $record_max_num = $table->size;
                 $memory_size = $table->memorySize;
+                $stats = $table->stats();
                 echo $table_name;
                 echo PHP_EOL;
                 echo $record_num;
@@ -42,6 +43,7 @@ class MetricListener implements ListenerInterface
                 echo PHP_EOL;
                 echo $memory_size;
                 echo PHP_EOL;
+                print_r($stats);
                 echo "==================" . PHP_EOL;
             }
             sleep(10);
