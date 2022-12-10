@@ -14,16 +14,12 @@ use Mustafa\Lrucache\LRUCacheManager;
 use Mustafa\Lrucache\SwooleTableManage;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Framework\Event\BeforeMainServerStart;
-use Psr\EventDispatcher\EventDispatcherInterface;
 
 class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
 {
 
     #[Inject]
     private ConfigInterface $config;
-
-    #[Inject]
-    private EventDispatcherInterface $eventDispatcher;
 
     /**
      * {@inheritDoc}
@@ -63,8 +59,6 @@ class BootProcessListener implements \Hyperf\Event\Contract\ListenerInterface
             $RNCache = make(RNCacheInterface::class, [$hash_key_length]);
             $lrucache = make(LRUCache::class, [$table_name, $swooletableobj->lruLimit, $RNCache]);
             LRUCacheManager::register($table_name, $lrucache);
-
-            $this->eventDispatcher->dispatch(new LrunCacheBuildEvent($table_name));
         }
     }
 
